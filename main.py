@@ -1,6 +1,8 @@
+import copy
+
 import open3d as o3d
 import numpy as np
-from numpy import copy
+
 
 
 def draw_registration_result(source, target, transformation):
@@ -16,10 +18,24 @@ def draw_registration_result(source, target, transformation):
                                       up=[-0.3402, -0.9189, -0.1996])
 
 
-source = o3d.io.read_point_cloud("./test_data/ICP/cloud_bin_0.pcd")
-target = o3d.io.read_point_cloud("./test_data/ICP/cloud_bin_1.pcd")
-threshold = 0.02
-trans_init = np.asarray([[0.862, 0.011, -0.507, 0.5],
-                         [-0.139, 0.967, -0.215, 0.7],
-                         [0.487, 0.255, 0.835, -1.4], [0.0, 0.0, 0.0, 1.0]])
+source = o3d.io.read_point_cloud("./test_data/cloud_bin_0.pcd")
+target = o3d.io.read_point_cloud("./test_data/cloud_bin_1.pcd")
+
+threshold = 10000
+trans_init = np.asarray([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 100.0],
+                         [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
 draw_registration_result(source, target, trans_init)
+
+print("Initial alignment")
+evaluation = o3d.pipelines.registration.evaluate_registration(
+    source, target, threshold, trans_init)
+print(evaluation)
+
+reg_p2p = o3d.pipelines.registration.registration_icp(
+    source, target, threshold, trans_init,
+    o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+    o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=20000))
+print(reg_p2p)
+print("Transformation is:")
+print(reg_p2p.transformation)
+draw_registration_result(source, target, reg_p2p.transformation)
